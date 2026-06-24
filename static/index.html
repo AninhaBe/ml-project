@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente ML Market</title>
+<style>
+  :root {
+    --bg: #111318;
+    --bg2: #1a1d24;
+    --bg3: #22262f;
+    --border: #2e3340;
+    --text: #e2e8f0;
+    --text2: #8892a4;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --radius: 10px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 600; }
+  header span.sub { color: var(--text2); font-size: 0.85rem; margin-left: 4px; }
+
+  /* ── Layout ── */
+  .layout { display: flex; height: calc(100vh - 57px); }
+  .sidebar {
+    width: 320px; min-width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* ── Cards / Sections ── */
+  .section { display: flex; flex-direction: column; gap: 10px; }
+  .section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+
+  /* ── Upload área ── */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .upload-area:hover, .upload-area.drag { border-color: var(--blue); background: rgba(59,130,246,.06); }
+  .upload-area svg { width: 32px; height: 32px; color: var(--text2); margin-bottom: 8px; }
+  .upload-area p { font-size: 0.82rem; color: var(--text2); }
+  .upload-area strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.9rem; }
+  #file-input { display: none; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+    border: none; cursor: pointer; transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--blue); color: #fff; width: 100%; justify-content: center; }
+  .btn-primary:hover:not(:disabled) { opacity: .88; }
+  .btn-success { background: var(--green); color: #000; }
+  .btn-ghost { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { background: var(--border); }
+
+  /* ── Progress ── */
+  .progress-wrap { display: none; flex-direction: column; gap: 6px; }
+  .progress-wrap.show { display: flex; }
+  .progress-bar-bg { height: 6px; background: var(--bg3); border-radius: 99px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--blue); border-radius: 99px; transition: width .3s; width: 0%; }
+  .progress-label { font-size: 0.78rem; color: var(--text2); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 8px 18px; font-size: 0.88rem; font-weight: 500; cursor: pointer;
+    border-bottom: 2px solid transparent; color: var(--text2); transition: color .15s, border-color .15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--blue); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Stats ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-card .val { font-size: 1.6rem; font-weight: 700; }
+  .stat-card .lbl { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+  .stat-card.green .val { color: var(--green); }
+  .stat-card.yellow .val { color: var(--yellow); }
+  .stat-card.red .val { color: var(--red); }
+  .stat-card.blue .val { color: var(--blue); }
+  .stat-card.purple .val { color: var(--purple); }
+
+  /* ── Filters ── */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-btn {
+    padding: 5px 13px; border-radius: 99px; font-size: 0.78rem; font-weight: 600;
+    border: 1.5px solid var(--border); background: transparent; color: var(--text2); cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-btn.active { color: #fff; border-color: transparent; }
+  .filter-btn[data-v="APROVADO"].active { background: var(--green); }
+  .filter-btn[data-v="AVALIAR"].active { background: var(--yellow); color: #000; }
+  .filter-btn[data-v="REJEITAR"].active { background: var(--red); }
+  .filter-btn[data-v="REVIEW"].active { background: var(--blue); }
+  .filter-btn[data-v="DESCARTADO"].active { background: var(--bg3); color: var(--text2); border-color: var(--border); }
+  .filter-btn[data-v="TODOS"].active { background: var(--blue); }
+
+  /* ── Results table ── */
+  .results-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .results-table th {
+    text-align: left; padding: 8px 12px; font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--text2);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .results-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: rgba(255,255,255,.025); }
+
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 0.72rem; font-weight: 700;
+  }
+  .badge-APROVADO { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-AVALIAR  { background: rgba(245,158,11,.15); color: var(--yellow); }
+  .badge-REJEITAR { background: rgba(239,68,68,.15); color: var(--red); }
+  .badge-REVIEW   { background: rgba(59,130,246,.15); color: var(--blue); }
+  .badge-DESCARTADO { background: rgba(255,255,255,.06); color: var(--text2); }
+
+  .margem-pos { color: var(--green); font-weight: 600; }
+  .margem-neg { color: var(--red); font-weight: 600; }
+  .margem-neu { color: var(--text2); }
+
+  .nome-produto { font-weight: 500; max-width: 240px; }
+  .nome-produto a { color: var(--text); text-decoration: none; }
+  .nome-produto a:hover { text-decoration: underline; color: var(--blue); }
+  .nome-sub { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .score-bar { height: 4px; background: var(--bg3); border-radius: 99px; width: 60px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 99px; }
+
+  /* ── Manual form ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { font-size: 0.8rem; color: var(--text2); display: block; margin-bottom: 5px; }
+  input[type=text], input[type=number] {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 0.88rem;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus { border-color: var(--blue); }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text2); }
+  .empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .4; }
+  .empty p { font-size: 0.9rem; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 20px; font-size: 0.85rem; z-index: 999;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ── Loader ── */
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid var(--border);
+    border-top-color: var(--blue); border-radius: 50%;
+    animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .info-box {
+    background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.25);
+    border-radius: var(--radius); padding: 10px 14px; font-size: 0.82rem; color: var(--blue);
+  }
+  .warn-box {
+    background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.25);
+    border-radius: var(--radius); padding: 10px 14px; font-size: 0.82rem; color: var(--yellow);
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── View toggle ── */
+  .view-toggle { display: flex; gap: 4px; }
+  .view-btn {
+    padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+    border: 1px solid var(--border); background: transparent; color: var(--text2); cursor: pointer;
+  }
+  .view-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  /* ── Grade visual ── */
+  .grade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .produto-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; transition: border-color .15s;
+  }
+  .produto-card:hover { border-color: var(--blue); }
+  .produto-card .fotos {
+    display: grid; grid-template-columns: 1fr 1fr;
+    height: 130px; background: var(--bg3);
+  }
+  .produto-card .foto-slot {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .produto-card .foto-slot:first-child { border-right: 1px solid var(--border); }
+  .produto-card .foto-slot img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+  }
+  .produto-card .foto-label {
+    position: absolute; bottom: 3px; left: 0; right: 0; text-align: center;
+    font-size: 0.6rem; color: var(--text2); background: rgba(0,0,0,.5);
+    padding: 1px 0;
+  }
+  .foto-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+    color: var(--border); font-size: 1.8rem;
+  }
+  .produto-card .info {
+    padding: 10px 12px;
+  }
+  .produto-card .info .nome {
+    font-size: 0.82rem; font-weight: 600; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .produto-card .info .meta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.72rem; color: var(--text2);
+  }
+  .produto-card .info .match-name {
+    font-size: 0.7rem; color: var(--text2); margin-top: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .produto-card .info .numeros {
+    display: flex; gap: 8px; margin-top: 6px; font-size: 0.75rem;
+  }
+  .produto-card .info .numeros span { color: var(--text2); }
+  .produto-card .info .numeros strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:#3b82f6">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"/>
+  </svg>
+  <h1>Agente ML Market</h1>
+  <span class="sub">— Pesquisa de mercado automatizada</span>
+</header>
+
+<div class="layout">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="section">
+      <div class="section-title">Upload de Catálogo</div>
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <strong id="upload-label">Arraste o PDF aqui</strong>
+        <p>ou clique para selecionar</p>
+      </div>
+      <input type="file" id="file-input" accept=".pdf">
+    </div>
+
+    <div class="section">
+      <button class="btn btn-primary" id="btn-processar" disabled onclick="processarPDF()">
+        <span id="btn-label">Processar PDF</span>
+      </button>
+      <button class="btn btn-ghost" id="btn-parar" style="display:none;color:var(--red);border-color:var(--red)" onclick="cancelarProcessamento()">
+        ⏹ Parar
+      </button>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+      <div class="progress-label" id="progress-label">Aguardando...</div>
+    </div>
+
+    <div id="sidebar-info"></div>
+
+    <div class="section" style="margin-top:auto">
+      <button class="btn btn-ghost" id="btn-excel" disabled onclick="downloadExcel()" style="font-size:.82rem">
+        ↓ Exportar Excel
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="tabs">
+      <button class="tab active" data-tab="resultados">Resultados</button>
+      <button class="tab" data-tab="manual">Manual (1 produto)</button>
+    </div>
+
+    <!-- Tab Resultados -->
+    <div class="tab-content active" id="tab-resultados">
+      <div id="stats-grid" class="stats-grid" style="display:none"></div>
+      <div class="filters" id="filters" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap">
+          <button class="filter-btn active" data-v="TODOS" onclick="filtrar(this)">Todos</button>
+          <button class="filter-btn" data-v="APROVADO" onclick="filtrar(this)">✅ Aprovado</button>
+          <button class="filter-btn" data-v="AVALIAR" onclick="filtrar(this)">🟡 Avaliar</button>
+          <button class="filter-btn" data-v="REJEITAR" onclick="filtrar(this)">🔴 Rejeitar</button>
+          <button class="filter-btn" data-v="REVIEW" onclick="filtrar(this)">🔵 Review</button>
+          <button class="filter-btn" data-v="DESCARTADO" onclick="filtrar(this)">⚪ Descartado</button>
+        </div>
+        <div class="view-toggle" style="margin-left:auto">
+          <button class="view-btn" id="btn-lista" onclick="setView('lista')">☰ Lista</button>
+          <button class="view-btn active" id="btn-grade" onclick="setView('grade')">⊞ Grade</button>
+        </div>
+      </div>
+      <div id="resultados-container">
+        <div class="empty">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0
+                 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p>Faça upload de um PDF para começar</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Manual -->
+    <div class="tab-content" id="tab-manual">
+      <div style="max-width:560px">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div>
+            <label>Nome do produto *</label>
+            <input type="text" id="m-nome" placeholder="Ex: Parafusadeira 18V">
+          </div>
+          <div>
+            <label>Preço de custo (R$) *</label>
+            <input type="number" id="m-preco" placeholder="0.00" step="0.01" min="0">
+          </div>
+          <div>
+            <label>Código/SKU</label>
+            <input type="text" id="m-codigo" placeholder="Opcional">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="max-width:200px" onclick="analisarManual()">
+          🔍 Analisar
+        </button>
+        <div id="manual-result" style="margin-top:20px"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Estado ──
+let jobId = null;
+let selectedFile = null;
+let allResultados = [];
+let filtroAtivo = 'TODOS';
+let sseSource = null;
+let viewMode = 'grade';  // 'lista' | 'grade'
+
+// ── Tabs ──
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Upload ──
+const uploadArea = document.getElementById('upload-area');
+const fileInput  = document.getElementById('file-input');
+
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.pdf')) setFile(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('upload-label').textContent = f.name;
+  document.querySelector('#upload-area p').textContent = (f.size / 1024 / 1024).toFixed(1) + ' MB';
+  document.getElementById('btn-processar').disabled = false;
+}
+
+// ── Processar PDF ──
+async function processarPDF() {
+  if (!selectedFile) return;
+  setBtnLoading(true);
+  toast('📄 Enviando PDF e extraindo produtos… aguarde', false, 0);
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+
+  let data;
+  try {
+    const r = await fetch('/api/upload-pdf', { method: 'POST', body: fd });
+    data = await r.json();
+    if (!r.ok) throw new Error(data.detail || 'Erro no upload');
+  } catch(e) {
+    console.error('Erro upload:', e);
+    toast('Erro: ' + e.message, true, 0);
+    setBtnLoading(false);
+    return;
+  }
+
+  jobId = data.job_id;
+
+  const info = document.getElementById('sidebar-info');
+  if (data.cache_hit) {
+    info.innerHTML = `<div class="info-box">⚡ ${data.n_produtos} produtos do cache</div>`;
+    toast(`⚡ ${data.n_produtos} produtos do cache — iniciando análise ML…`, false, 4000);
+  } else {
+    info.innerHTML = `<div class="info-box">📄 ${data.n_produtos} produtos extraídos</div>`;
+    toast(`✅ ${data.n_produtos} produtos extraídos — iniciando análise ML…`, false, 4000);
+  }
+
+  // Inicia análise
+  const ar = await fetch('/api/analisar/' + jobId, { method: 'POST' });
+  const ad = await ar.json();
+  if (ad.status === 'busy') {
+    toast('⚠️ ' + ad.msg, true, 0);
+    setBtnLoading(false);
+    return;
+  }
+
+  // Inicia SSE
+  iniciarSSE();
+  setBtnLoading(false);
+}
+
+async function cancelarProcessamento() {
+  if (!jobId) return;
+  await fetch('/api/cancelar/' + jobId, { method: 'POST' });
+  document.getElementById('btn-parar').style.display = 'none';
+  toast('Cancelando…');
+}
+
+function iniciarSSE() {
+  if (sseSource) sseSource.close();
+  document.getElementById('progress-wrap').classList.add('show');
+  document.getElementById('btn-parar').style.display = 'block';
+  sseSource = new EventSource('/api/progresso/' + jobId);
+  sseSource.onmessage = async (e) => {
+    const d = JSON.parse(e.data);
+    atualizarProgresso(d);
+    if (d.status === 'concluido' || d.status === 'cancelado') {
+      sseSource.close();
+      document.getElementById('btn-parar').style.display = 'none';
+      await carregarResultados();
+      if (d.status === 'concluido') {
+        document.getElementById('btn-excel').disabled = false;
+      }
+      if (d.status === 'cancelado') {
+        toast('Processamento cancelado — resultados parciais disponíveis');
+      }
+    } else if (d.n_resultados > allResultados.length) {
+      await carregarResultados();
+    }
+  };
+}
+
+function atualizarProgresso(d) {
+  const pct = d.total > 0 ? (d.progresso / d.total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  let label = '';
+  if (d.status === 'concluido') {
+    label = `✅ ${d.total} produtos analisados`;
+  } else if (d.status === 'coletando_avantpro') {
+    const fase = d.avantpro_fase === 'match' ? '🔍 match' : '⏳ coleta';
+    label = `${fase} [${d.avantpro_match_done}/${d.avantpro_total}] — enfileirados ${d.avantpro_enfileirados}, coletados ${d.avantpro_feito}, pendentes ${d.avantpro_pendente}`;
+  } else {
+    label = `[${d.progresso}/${d.total}] ${d.current ? d.current.substring(0,45) : ''}`;
+  }
+  document.getElementById('progress-label').textContent = label;
+}
+
+// ── Resultados ──
+async function carregarResultados() {
+  if (!jobId) return;
+  const r = await fetch(`/api/resultados/${jobId}?offset=0&limit=500`);
+  const data = await r.json();
+  allResultados = data.resultados || [];
+  renderResultados();
+}
+
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('btn-lista').classList.toggle('active', mode === 'lista');
+  document.getElementById('btn-grade').classList.toggle('active', mode === 'grade');
+  renderResultados();
+}
+
+function renderGrade(filtrados) {
+  const cards = filtrados.map(r => {
+    const mc = margemClass(r.margem_pct);
+    const scoreColor = r.score >= 0.7 ? 'var(--green)' : r.score >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+    const fotoPDF = r.img_local
+      ? `<img src="${r.img_local}&t=${Date.now()}" loading="lazy" alt="PDF">`
+      : `<div class="foto-placeholder">&#128247;</div>`;
+    const fotoML = r.thumb_ml
+      ? `<img src="${r.thumb_ml}" loading="lazy" alt="ML">`
+      : `<div class="foto-placeholder" style="font-size:1rem;color:var(--text2)">sem foto ML</div>`;
+    const link = r.permalink ? `href="${r.permalink}" target="_blank"` : '';
+    return `<div class="produto-card">
+      <div class="fotos">
+        <div class="foto-slot">${fotoPDF}<div class="foto-label">PDF</div></div>
+        <div class="foto-slot">${fotoML}<div class="foto-label">ML</div></div>
+      </div>
+      <div class="info">
+        <div class="nome"><a ${link} style="color:var(--text);text-decoration:none">${esc(r.nome)}</a></div>
+        ${r.catalog_name ? `<div class="match-name">&#8594; ${esc(r.catalog_name)}</div>` : ''}
+        <div class="meta">
+          <span class="badge badge-${r.veredicto}">${r.veredicto}</span>
+          <span style="color:${scoreColor};font-size:.72rem;font-weight:700">${(r.score*100).toFixed(0)}pts</span>
+        </div>
+        <div class="numeros">
+          <span>Custo</span><strong>${r.preco_custo != null ? 'R$'+r.preco_custo.toFixed(2) : '—'}</strong>
+          <span>Alvo</span><strong>${r.pv_alvo != null ? 'R$'+r.pv_alvo.toFixed(2) : '—'}</strong>
+          <span>Margem</span><strong class="${mc}">${r.margem_pct != null ? r.margem_pct+'%' : '—'}</strong>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="grade-grid">${cards}</div>`;
+}
+
+function renderResultados() {
+  const container = document.getElementById('resultados-container');
+  const filtrados = filtroAtivo === 'TODOS'
+    ? allResultados
+    : allResultados.filter(r => r.veredicto === filtroAtivo);
+
+  if (allResultados.length > 0) {
+    document.getElementById('stats-grid').style.display = 'grid';
+    document.getElementById('filters').style.display = 'flex';
+    renderStats();
+  }
+
+  if (filtrados.length === 0) {
+    container.innerHTML = `<div class="empty"><p>Nenhum produto com veredicto "${filtroAtivo}"</p></div>`;
+    return;
+  }
+
+  if (viewMode === 'grade') {
+    container.innerHTML = renderGrade(filtrados);
+    return;
+  }
+
+  const rows = filtrados.map(r => {
+    const mc = margemClass(r.margem_pct);
+    const mc2 = margemClass(r.margem_pct_premium);
+    const scoreColor = r.score >= 0.7 ? 'var(--green)' : r.score >= 0.4 ? 'var(--yellow)' : 'var(--red)';
+    const nome = r.permalink
+      ? `<a href="${r.permalink}" target="_blank">${esc(r.nome)}</a>`
+      : esc(r.nome);
+    return `<tr>
+      <td><div class="nome-produto">${nome}</div>
+          <div class="nome-sub">${esc(r.codigo)} ${r.catalog_name ? '· ' + esc(r.catalog_name.substring(0,40)) : ''}</div></td>
+      <td>${r.preco_custo != null ? 'R$ ' + r.preco_custo.toFixed(2) : '—'}</td>
+      <td>${r.pv_alvo != null ? 'R$ ' + r.pv_alvo.toFixed(2) : '—'}</td>
+      <td class="${mc}">${r.margem_pct != null ? r.margem_pct + '%' : '—'}</td>
+      <td class="${mc2}">${r.margem_pct_premium != null ? r.margem_pct_premium + '%' : '—'}</td>
+      <td>${r.n_concorrentes}</td>
+      <td>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill" style="width:${r.score*100}%;background:${scoreColor}"></div></div>
+          <span style="font-size:.78rem;color:${scoreColor}">${(r.score*100).toFixed(0)}</span>
+        </div>
+      </td>
+      <td><span class="badge badge-${r.veredicto}">${r.veredicto}</span></td>
+      <td style="font-size:.72rem;color:var(--text2);max-width:140px">${esc(r.bandeiras)}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="results-table">
+      <thead><tr>
+        <th>Produto</th><th>Custo</th><th>PV Alvo</th>
+        <th>Margem Cl.</th><th>Margem Pr.</th><th>Concorr.</th>
+        <th>Score</th><th>Veredicto</th><th>Flags</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function renderStats() {
+  const counts = { APROVADO:0, AVALIAR:0, REJEITAR:0, REVIEW:0, DESCARTADO:0 };
+  allResultados.forEach(r => { if (r.veredicto in counts) counts[r.veredicto]++; });
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card blue"><div class="val">${allResultados.length}</div><div class="lbl">Total</div></div>
+    <div class="stat-card green"><div class="val">${counts.APROVADO}</div><div class="lbl">Aprovados</div></div>
+    <div class="stat-card yellow"><div class="val">${counts.AVALIAR}</div><div class="lbl">Avaliar</div></div>
+    <div class="stat-card red"><div class="val">${counts.REJEITAR}</div><div class="lbl">Rejeitar</div></div>
+    <div class="stat-card purple"><div class="val">${counts.REVIEW}</div><div class="lbl">Review</div></div>`;
+}
+
+function filtrar(btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtroAtivo = btn.dataset.v;
+  renderResultados();
+}
+
+// ── Excel ──
+async function downloadExcel() {
+  if (!jobId) return;
+  window.location.href = '/api/download-excel/' + jobId;
+}
+
+// ── Manual ──
+async function analisarManual() {
+  const nome = document.getElementById('m-nome').value.trim();
+  const preco = parseFloat(document.getElementById('m-preco').value);
+  const codigo = document.getElementById('m-codigo').value.trim();
+  if (!nome || !preco) { toast('Nome e preço são obrigatórios', true); return; }
+
+  const div = document.getElementById('manual-result');
+  div.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--text2)"><span class="spinner"></span> Analisando...</div>`;
+
+  try {
+    const r = await fetch('/api/analisar-produto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, preco, codigo }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail);
+    div.innerHTML = renderManualCard(d);
+  } catch(e) {
+    div.innerHTML = `<div class="warn-box">Erro: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderManualCard(d) {
+  const mc = margemClass(d.margem_pct);
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong>${esc(d.nome)}</strong>
+      <span class="badge badge-${d.veredicto}">${d.veredicto}</span>
+    </div>
+    ${d.catalog_name ? `<div style="font-size:.8rem;color:var(--text2);margin-bottom:12px">Match: ${esc(d.catalog_name)}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:.83rem">
+      <div><div style="color:var(--text2);font-size:.72rem">Custo</div>R$ ${d.preco_custo?.toFixed(2) ?? '—'}</div>
+      <div><div style="color:var(--text2);font-size:.72rem">PV Alvo</div>${d.pv_alvo ? 'R$ ' + d.pv_alvo.toFixed(2) : '—'}</div>
+      <div><div style="color:var(--text2);font-size:.72rem">Margem</div><span class="${mc}">${d.margem_pct != null ? d.margem_pct + '%' : '—'}</span></div>
+      <div><div style="color:var(--text2);font-size:.72rem">Concorrentes</div>${d.n_concorrentes}</div>
+      <div><div style="color:var(--text2);font-size:.72rem">Score</div>${(d.score*100).toFixed(0)}/100</div>
+      <div><div style="color:var(--text2);font-size:.72rem">Preço Mediana</div>${d.preco_mediana ? 'R$ ' + d.preco_mediana.toFixed(2) : '—'}</div>
+    </div>
+    ${d.permalink ? `<a href="${d.permalink}" target="_blank" style="display:inline-block;margin-top:12px;font-size:.78rem;color:var(--blue)">Ver no ML →</a>` : ''}
+    ${d.bandeiras ? `<div style="margin-top:8px;font-size:.72rem;color:var(--text2)">${esc(d.bandeiras)}</div>` : ''}
+  </div>`;
+}
+
+// ── Helpers ──
+function margemClass(v) {
+  if (v == null) return 'margem-neu';
+  return v >= 15 ? 'margem-pos' : v >= 0 ? 'margem-neu' : 'margem-neg';
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function setBtnLoading(loading) {
+  const btn = document.getElementById('btn-processar');
+  const lbl = document.getElementById('btn-label');
+  if (loading) {
+    btn.disabled = true;
+    lbl.innerHTML = '<span class="spinner"></span> Processando...';
+  } else {
+    btn.disabled = false;
+    lbl.textContent = 'Processar PDF';
+  }
+}
+function toast(msg, isError, durMs) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  if (durMs === 0) return;  // fica fixo até ser removido manualmente
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), durMs ?? 3500);
+}
+function toastClose() {
+  const t = document.getElementById('toast');
+  t.classList.remove('show');
+}
+</script>
+</body>
+</html>

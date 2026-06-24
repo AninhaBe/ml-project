@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "ML Agent - Avantpro Collector",
+  "version": "1.0",
+  "description": "Coleta dados da Avantpro no ML e envia para o ML Agent local",
+  "permissions": ["activeTab", "tabs"],
+  "host_permissions": [
+    "https://www.mercadolivre.com.br/*",
+    "https://mercadolivre.com.br/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.mercadolivre.com.br/*", "https://mercadolivre.com.br/*"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

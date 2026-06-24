@@ -1,0 +1,2 @@
+*.pdf filter=lfs diff=lfs merge=lfs -text
+.venv/Lib/site-packages/playwright/driver/node.exe filter=lfs diff=lfs merge=lfs -text
